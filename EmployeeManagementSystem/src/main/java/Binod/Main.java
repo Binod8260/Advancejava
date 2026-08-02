@@ -16,7 +16,8 @@ public class Main {
             System.out.println("2. View Employee");
             System.out.println("3. Update Employee");
             System.out.println("4. Delete Employee");
-            System.out.println("5. Exit");
+            System.out.println("5. Transaction");
+            System.out.println("6. Exit");
 
             System.out.print("Enter your choice: ");
             int ch = sc.nextInt();
@@ -40,6 +41,10 @@ public class Main {
                     break;
 
                 case 5:
+                    emp.transactionEmployee();
+                    break;
+
+                case 6:
                     System.out.println("Thank You...");
                     System.exit(0);
 
