@@ -205,101 +205,134 @@ public class EmployeeOperation {
             System.out.println(e);
         }
     }
-    public void transactionEmployee() {
 
-        Connection con = null;
+
+public void transactionEmployee() {
+
+    Connection con = null;
+
+    try {
+
+        con = DBConnection.getConnection();
+
+        // Transaction Start
+        con.setAutoCommit(false);
+
+        System.out.print("Enter Employee ID: ");
+        int id = sc.nextInt();
+
+        // Check Employee
+        String checkSql =
+                "SELECT salary FROM employee WHERE id=?";
+
+        PreparedStatement checkPs =
+                con.prepareStatement(checkSql);
+
+        checkPs.setInt(1, id);
+
+        ResultSet checkRs = checkPs.executeQuery();
+
+        if (!checkRs.next()) {
+
+            System.out.println("Employee Not Found...");
+
+            con.rollback();
+            System.out.println("Rollback Done.");
+
+            checkRs.close();
+            checkPs.close();
+            con.close();
+
+            return;
+        }
+
+        // Current Salary
+        double currentSalary = checkRs.getDouble("salary");
+
+        System.out.println("Current Salary: " + currentSalary);
+
+        // Savepoint
+        Savepoint sp =
+                con.setSavepoint("BeforeSalaryAdd");
+
+        System.out.println("Savepoint Created.");
+
+        // Amount Add
+        System.out.print("Enter Amount to Add: ");
+        double amount = sc.nextDouble();
+
+        String sql =
+                "UPDATE employee SET salary = salary + ? WHERE id=?";
+
+        PreparedStatement ps =
+                con.prepareStatement(sql);
+
+        ps.setDouble(1, amount);
+        ps.setInt(2, id);
+
+        int row = ps.executeUpdate();
+
+        if (row > 0) {
+
+            // Get Total Salary
+            String totalSql =
+                    "SELECT salary FROM employee WHERE id=?";
+
+            PreparedStatement totalPs =
+                    con.prepareStatement(totalSql);
+
+            totalPs.setInt(1, id);
+
+            ResultSet rs = totalPs.executeQuery();
+
+            if (rs.next()) {
+
+                double totalSalary =
+                        rs.getDouble("salary");
+
+                System.out.println("Amount Added: " + amount);
+                System.out.println("Total Salary: " + totalSalary);
+            }
+
+            // Commit
+            con.commit();
+
+            System.out.println("Transaction Successful...");
+            System.out.println("Commit Done.");
+
+            rs.close();
+            totalPs.close();
+
+        } else {
+
+            // Rollback to Savepoint
+            con.rollback(sp);
+
+            System.out.println("Salary Add Failed.");
+            System.out.println("Rollback to Savepoint Done.");
+        }
+
+        checkRs.close();
+        checkPs.close();
+        ps.close();
+        con.close();
+
+    } catch (Exception e) {
 
         try {
 
-            con = DBConnection.getConnection();
-
-            // Transaction Start
-            con.setAutoCommit(false);
-
-            System.out.print("Enter Employee ID: ");
-            int id = sc.nextInt();
-            sc.nextLine();
-
-            // -------- First Operation --------
-
-            System.out.print("Enter New Department: ");
-            String department = sc.nextLine();
-
-            String sql1 =
-                    "UPDATE employee SET department=? WHERE id=?";
-
-            PreparedStatement ps1 = con.prepareStatement(sql1);
-
-            ps1.setString(1, department);
-            ps1.setInt(2, id);
-
-            int row1 = ps1.executeUpdate();
-
-            if (row1 == 0) {
-                System.out.println("Employee Not Found...");
+            if (con != null) {
                 con.rollback();
-                System.out.println("Rollback Done.");
-                return;
+                con.close();
+
+                System.out.println("Full Rollback Done.");
             }
 
-            System.out.println("Department Updated.");
-
-            // ===== SAVEPOINT =====
-            Savepoint sp = con.setSavepoint("DepartmentUpdated");
-
-            System.out.println("Savepoint Created.");
-
-            // -------- Second Operation --------
-
-            System.out.print("Enter New Salary: ");
-            double salary = sc.nextDouble();
-
-            String sql2 =
-                    "UPDATE employee SET salary=? WHERE id=?";
-
-            PreparedStatement ps2 = con.prepareStatement(sql2);
-
-            ps2.setDouble(1, salary);
-            ps2.setInt(2, id);
-
-            int row2 = ps2.executeUpdate();
-
-            if (row2 > 0) {
-
-                con.commit();
-
-                System.out.println("Transaction Successful...");
-                System.out.println("Commit Done.");
-
-            } else {
-
-                // Rollback only up to Savepoint
-                con.rollback(sp);
-
-                con.commit();
-
-                System.out.println("Salary Update Failed.");
-                System.out.println("Rollback To Savepoint Done.");
-            }
-
-            ps1.close();
-            ps2.close();
-            con.close();
-
-        } catch (Exception e) {
-
-            try {
-
-                if (con != null) {
-                    con.rollback();
-                    System.out.println("Full Rollback Done.");
-                }
-
-            } catch (Exception ex) {
-                System.out.println(ex);
-            }
-
-            System.out.println(e);
+        } catch (Exception ex) {
+            System.out.println(ex);
         }
+
+        System.out.println(e);
     }
+}
 }
